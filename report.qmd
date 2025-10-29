@@ -7,7 +7,11 @@ format: typst
 
 ## **Part 0: libraries**
 
-```{r}
+```{library(tidyverse)
+library(maps)
+library(dplyr)
+library(ggplot2)
+library(stringr)}
 
 ```
 
@@ -17,13 +21,36 @@ Chosen Question:
 
 ## **Part 2: Data Preparation and Cleaning**
 
-```{r}
+```{total1 <- read.csv("data/total-use-2021.csv", row.names=1)
+total2 <- read.csv("data/total-use-2022.csv", row.names=1)
+total3 <- read.csv("data/total-use-2023.csv", row.names=1)
+regist <- read.csv("data/ev-registrations-by-state-2023.csv")
+price <- read.csv("data/av-energy-price-2021-2023.csv")
+
+colnames(regist) <- c("State", "Count")
+regist$Count <- regist$Count |> str_replace_all("[^0-9]", "")
+regist <- regist[c(-1, -2), ] #removing the column titles that are part of the data set
+regist <- regist |> mutate(State = (ifelse(State == "District of Columbia", "DC", State)))  #DC specifically doesn't work with the following command
+regist$State[c(-9, -52)] <- state.abb[match(regist$State[c(-9, -52)], state.name)]
+
+colnames(price) <- "Thing"
+price <- price |> separate(Thing, into = c("State", "2021", "2022", "2023"), sep=",")
+price <- price |> slice(-c(1, 2), )
+price$'2021' <- price$'2021' |> str_replace_all("[^0-9]", "")
+price$'2022' <- price$'2022' |> str_replace_all("[^0-9]", "")
+price$'2023' <- price$'2023' |> str_replace_all("[^0-9]", "")}
 
 ```
 
 ## **Part 3: Joining / Pivoting Datasets for Analysis**
 
-```{r}
+```{df_total <- total1 + total2 + total3 #For question 1
+df_total <- df_total |> rownames_to_column(var = "Type")
+df_total_long <- df_total |> pivot_longer(cols = -Type, names_to = c("state_abbr"), values_to="value")
+df_total_wide <- df_total_long |> pivot_wider(names_from=Type, values_from = value)}
+df_total_wide <- df_total_wide |> mutate(total=rowSums(across(-state_abbr)))
+df_total_wide <- df_total_wide |> mutate(unRenewProp = rowSums(across(c("Coal", "Natural Gas†", "Petroleum (BTU)")) / total))
+df_total_wide <- df_total_wide |> mutate(renewProp = total_renewable_energy / total) #Note: Not just subtracting 1 from above }
 
 ```
 
