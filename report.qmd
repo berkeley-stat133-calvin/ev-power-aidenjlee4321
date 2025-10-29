@@ -26,6 +26,9 @@ total2 <- read.csv("data/total-use-2022.csv", row.names=1)
 total3 <- read.csv("data/total-use-2023.csv", row.names=1)
 regist <- read.csv("data/ev-registrations-by-state-2023.csv")
 price <- read.csv("data/av-energy-price-2021-2023.csv")
+renew1 <- read.csv("data/renew-use-2021.csv")
+renew2 <- read.csv("data/renew-use-2022.csv")
+renew3 <- read.csv("data/renew-use-2023.csv")
 
 colnames(regist) <- c("State", "Count")
 regist$Count <- regist$Count |> str_replace_all("[^0-9]", "")
@@ -38,7 +41,14 @@ price <- price |> separate(Thing, into = c("State", "2021", "2022", "202
 price <- price |> slice(-c(1, 2), )
 price$'2021' <- price$'2021' |> str_replace_all("[^0-9]", "")
 price$'2022' <- price$'2022' |> str_replace_all("[^0-9]", "")
-price$'2023' <- price$'2023' |> str_replace_all("[^0-9]", "")}
+price$'2023' <- price$'2023' |> str_replace_all("[^0-9]", "")
+
+colnames(renew1)<- c("State", "Energy_Source", "Price")
+colnames(renew2)<- c("State", "Energy_Source", "Price")
+colnames(renew3)<- c("State", "Energy_Source", "Price")
+renew1$Price <- renew1$Price |> str_replace_all("[^0-9]", "")
+renew2$Price <- renew2$Price |> str_replace_all("[^0-9]", "")
+renew3$Price <- renew3$Price |> str_replace_all("[^0-9]", "")}
 
 ```
 
