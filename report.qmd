@@ -75,7 +75,7 @@ ggplot(us_map, aes(x = long, y = lat, group = group, fill = unRenewProp)) +
    scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
    theme_minimal() +
    theme(plot.title = element_text(hjust=0.5, size=10, face="bold"), legend.title=element_text(size=6, face="bold"))+
-   labs(title="Proportion of Unrenewable Energy Used per State", fill = "Color Legend")
+   labs(title="Proportion of Unrenewable Energy Used per State (2021-2023)", fill = "Color Legend")
 }
 
 ```
