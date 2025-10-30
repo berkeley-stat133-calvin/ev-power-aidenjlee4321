@@ -3,29 +3,40 @@ title: "EV Power - Lab 4 Project Report"
 format: typst
 ---
 
-# Example Solution 1
-
+### **Measuring Proportions of Nonrenewable Energy Use per State** ###
 ## **Part 0: libraries**
 
-```{library(tidyverse)
+```{r}
+#| echo: false
+library(tidyverse)
 library(maps)
 library(dplyr)
 library(ggplot2)
-library(stringr)}
+library(stringr)
+
 
 ```
+I'll be using the tidyverse, maps, dplyr, gpplot2, and stringr libraries for this project. 
 
 ## **Part 1:** **Defining Research Question**
 
-Chosen Question:
+Chosen Question: How much electricity comes from fossil fuels per state (totalled across 2021-2023)?
+This may sound boring, but it genuinely does have special meaning to me. You see, I am in a few subreddits that often show 
+statistics-based maps of the US similar to this one, except for things like natal fatilities or quality of education.
+And a common meme is that they all have the same groupings, with high concentrations of 'bad' things in the southeast and 
+central north. So, I want to see if it holds true for my question too! 
 
 ## **Part 2: Data Preparation and Cleaning**
 
-```{total1 <- read.csv("data/total-use-2021.csv", row.names=1)
+```{r}
+#| echo: false
+total1 <- read.csv("data/total-use-2021.csv", row.names=1)
 total2 <- read.csv("data/total-use-2022.csv", row.names=1)
 total3 <- read.csv("data/total-use-2023.csv", row.names=1)
 regist <- read.csv("data/ev-registrations-by-state-2023.csv")
-price <- read.csv("data/av-energy-price-2021-2023.csv")
+
+price <- read.csv("data/av-energy-price-2021-2023.csv")
+
 renew1 <- read.csv("data/renew-use-2021.csv")
 renew2 <- read.csv("data/renew-use-2022.csv")
 renew3 <- read.csv("data/renew-use-2023.csv")
@@ -36,37 +47,42 @@ regist <- regist[c(-1, -2), ] #removing the column titles that are part of the d
 regist <- regist |> mutate(State = (ifelse(State == "District of Columbia", "DC", State)))  #DC specifically doesn't work with the following command
 regist$State[c(-9, -52)] <- state.abb[match(regist$State[c(-9, -52)], state.name)]
 
-colnames(price) <- "Thing"
-price <- price |> separate(Thing, into = c("State", "2021", "2022", "2023"), sep=",")
+colnames(price) <- "Thing"
+price <- price |> separate(Thing, into = c("State", "2021", "2022", "2023"), sep=",")
 price <- price |> slice(-c(1, 2), )
 price$'2021' <- price$'2021' |> str_replace_all("[^0-9]", "")
 price$'2022' <- price$'2022' |> str_replace_all("[^0-9]", "")
 price$'2023' <- price$'2023' |> str_replace_all("[^0-9]", "")
 
-colnames(renew1)<- c("State", "Energy_Source", "Price")
-colnames(renew2)<- c("State", "Energy_Source", "Price")
-colnames(renew3)<- c("State", "Energy_Source", "Price")
+colnames(renew1) <- c("State", "Energy_Source", "Price")
+colnames(renew2) <- c("State", "Energy_Source", "Price")
+colnames(renew3) <- c("State", "Energy_Source", "Price")
 renew1$Price <- renew1$Price |> str_replace_all("[^0-9]", "")
 renew2$Price <- renew2$Price |> str_replace_all("[^0-9]", "")
-renew3$Price <- renew3$Price |> str_replace_all("[^0-9]", "")}
-
+renew3$Price <- renew3$Price |> str_replace_all("[^0-9]", "")
 ```
 
 ## **Part 3: Joining / Pivoting Datasets for Analysis**
 
-```{df_total <- total1 + total2 + total3 #For question 1
+```{r}
+#| echo: false
+df_total <- total1 + total2 + total3 #For question 1, I just needed to combine the total-use yearly tables into one. I combined it this way, because I just needed the totals. 
 df_total <- df_total |> rownames_to_column(var = "Type")
 df_total_long <- df_total |> pivot_longer(cols = -Type, names_to = c("state_abbr"), values_to="value")
-df_total_wide <- df_total_long |> pivot_wider(names_from=Type, values_from = value)}
+df_total_wide <- df_total_long |> pivot_wider(names_from=Type, values_from = value)
 df_total_wide <- df_total_wide |> mutate(total=rowSums(across(-state_abbr)))
-df_total_wide <- df_total_wide |> mutate(unRenewProp = rowSums(across(c("Coal", "Natural Gas†", "Petroleum (BTU)")) / total))
-df_total_wide <- df_total_wide |> mutate(renewProp = total_renewable_energy / total) #Note: Not just subtracting 1 from above }
+df_total_wide <- df_total_wide |> mutate(unRenewProp = rowSums(across(c("Coal", "Natural Gas†", "Petroleum (BTU)")) / total)) #Prop stnads for proportion
+df_total_wide <- df_total_wide |> mutate(renewProp = total_renewable_energy / total) #Note: Not just subtracting 1 from above
 
+
+head(df_total_wide)
 ```
 
 ## **Part 4: Mapping Visualization**
 
-```{state_map <- setNames(state.abb, tolower(state.name))
+```{r}
+#| echo: false
+state_map <- setNames(state.abb, tolower(state.name))
 us_states <- map_data("state") |> mutate(region = state_map[region])
 us_map <- us_states |> left_join(df_total_wide, by=c("region" = "state_abbr"))
 ggplot(us_map, aes(x = long, y = lat, group = group, fill = unRenewProp)) +
@@ -75,7 +91,8 @@ ggplot(us_map, aes(x = long, y = lat, group = group, fill = unRenewProp)) +
    scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
    theme_minimal() +
    theme(plot.title = element_text(hjust=0.5, size=10, face="bold"), legend.title=element_text(size=6, face="bold"))+
-   labs(title="Proportion of Unrenewable Energy Used per State (2021-2023)", fill = "Color Legend")
-}
-
+   labs(title="Proportion of Unrenewable Energy Used per State", fill = "Color Legend")
 ```
+
+## **Part 5: Analysis**
+The graph really didn't match the meme at all. In fact, the results seemed to vary wildly from state to state without much of an immediately obvious reason why. Rural states seem to tend to use more unrenewable energy, but some are notable outliers (like South Dakota, as opposed to North Dakota). In addition, there doesn't seem to be much of a correlation with Republican or Democratic states. Ultimately, I think this is a topic that would require more research, and comparison with more graphs to find a pattern. My best guess at a pattern is, I suppose, that states on the east tend to use less than states in the west and the south. 
